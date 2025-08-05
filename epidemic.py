@@ -12,10 +12,13 @@ class EpidemicModel():
         self.g = g
         self.b = b
         
+        self.v = 0
+        self.case_threshold = i0+100
         
         self.s = N - i0
         self.i = i0
         self.r = 0
+        
             
         # Time
         self.t = 0
@@ -24,14 +27,25 @@ class EpidemicModel():
         # history
         self.history = []
     
+    def get_v(self):
+        if self.i >= self.case_threshold:
+            self.v += 0.02
+            self.case_threshold+=100
+        Rt = (self.b/self.g) * (self.s/self.N)
+        if Rt>1:
+            self.v*=1.5
+            
+        return self.v
+        
     def step(self):
         beta = self.b
         gamma = self.g
-        
+        v = self.get_v()
+        # Vaccination policy
         # Flow
-        ds = -beta * self.s * self.i
-        di = (beta * self.s * self.i) - (gamma * self.i)
-        dr = gamma * self.i
+        ds = (-(beta * self.s * self.i) - (v + self.s) )/ self.N
+        di = ((beta * self.s * self.i) - (gamma * self.i)) /self.N 
+        dr = ((gamma * self.i) + (v + self.s)) /self.N 
         
         # Update Stocks
         self.s+= ds*self.dt
@@ -71,10 +85,10 @@ class EpidemicModel():
 
 model = EpidemicModel(
     N=10000,
-    i0 = 10,
+    i0=10,
     b=0.35,
     g=0.1
 )
 
-model.sim(time_limit=500) # 100 dias
+model.sim(time_limit=100) # 100 dias
 model.plot()
